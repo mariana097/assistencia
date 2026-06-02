@@ -1,0 +1,53 @@
+```mermaid
+classDiagram
+
+class Cliente {
+    +Long id
+    +String nome
+    +String cpf
+    +String telefone
+    +String email
+}
+
+class Equipamento {
+    +Long id
+    +String nome
+    +String marca
+    +String modelo
+}
+
+class OrdemServico {
+    +Long id
+    +LocalDate dataAbertura
+    +String defeito
+    +StatusOS status
+    +Double valor
+}
+
+class Funcionario {
+    +Long id
+    +String nome
+    +String login
+    +String senha
+}
+
+class Tecnico
+
+class Atendente
+
+class StatusOS {
+    ABERTA
+    EM_ANDAMENTO
+    CONCLUIDA
+    ENTREGUE
+}
+
+Funcionario <|-- Tecnico
+Funcionario <|-- Atendente
+
+Cliente "1" --> "*" Equipamento : possui
+Equipamento "1" --> "*" OrdemServico : gera
+Funcionario "1" --> "*" OrdemServico : atende
+
+OrdemServico --> StatusOS : status
+```
