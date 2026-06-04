@@ -1,105 +1,153 @@
-# Modelo de Dados
-
-## 📊 Diagrama de Classes usando Mermaid
+# Diagrama de Classes
 
 ```mermaid
 classDiagram
 
 class Cliente {
-    +Long id
-    +String nome
-    +String cpf
-    +String telefone
-    +String email
+    +id: int
+    +nome: string
+    +cpf: string
+    +telefone: string
+    +email: string
 }
 
-class Equipamento {
-    +Long id
-    +String nome
-    +String marca
-    +String modelo
-}
-
-class OrdemServico {
-    +Long id
-    +LocalDate dataAbertura
-    +String defeito
-    +StatusOS status
-    +Double valor
+class Aparelho {
+    +id: int
+    +tipo: string
+    +marca: string
+    +modelo: string
+    +numero_serie: string
+    +observacoes: string
+    +status: string
 }
 
 class Funcionario {
-    +Long id
-    +String nome
-    +String login
-    +String senha
+    +id: int
+    +nome: string
+    +cpf: string
+    +salario: float
 }
 
-class Tecnico
+class Tecnico {
+    +especialidade: string
+}
 
-class Administrador 
+class Administrador {
+    +nivel_acesso: string
+}
 
 class OrdemServico {
-    +Long id 
-    +LocalDate 
-    dataAbertura 
-    +LocalDate 
-    dataEncerramento 
-    +String 
-    descricaoProblema 
-    +String status 
-    +Double valorTotal 
-} 
-
-class VisitaTecnica { 
-    +Long id 
-    +LocalDate 
-    dataAgendamento 
-    +LocalDate 
-    dataRealizacao 
-    +String resultado 
-    +String status 
-} 
-
-class Equipamento { 
-    +Long id 
-    +String nome 
-    +Integer quantidade 
-    +Double valorUnitario 
-} 
-
-class ContaReceber { 
-    +Long id 
-    +Double valor 
-    +LocalDate vencimento 
-    +String status 
-} 
-
-class Pagamento { 
-    +Long id 
-    +Double 
-    valorPago 
-    +LocalDate 
-    dataPagamento 
-    +String 
-    formaPagamento 
+    +id: int
+    +data_abertura: date
+    +data_encerramento: date
+    +descricao_problema: string
+    +status: string
+    +valor_base: float
+    +valor_total: float
+    +calcularValor()
 }
 
+class VisitaTecnica {
+    +id: int
+    +data_agendamento: date
+    +data_realizacao: date
+    +resultado: string
+    +status: string
+}
+
+class Equipamento {
+    +id: int
+    +nome: string
+    +quantidade: int
+    +valor_unitario: float
+}
+
+class Estoque {
+    +id: int
+    +quantidade_disponivel: int
+    +quantidade_minima: int
+    +atualizarEstoque()
+}
+
+class ContaReceber {
+    +id: int
+    +valor: float
+    +vencimento: date
+    +status: string
+}
+
+class Pagamento {
+    +id: int
+    +valor_pago: float
+    +data_pagamento: date
+    +forma_pagamento: string
+}
+
+%% Strategy
+
+class EstrategiaCalculo {
+    <<interface>>
+    +calcular(valorBase)
+}
+
+class CalculoPadrao {
+    +calcular(valorBase)
+}
+
+class CalculoUrgente {
+    +calcular(valorBase)
+}
+
+class CalculoPorHora {
+    +calcular(valorBase)
+}
+
+class CalculoDomiciliar {
+    +calcular(valorBase)
+}
+
+%% Factory Method
+
+class EstrategiaFactory {
+    +criar(tipo)
+}
+
+%% Herança
 
 Funcionario <|-- Tecnico
-Funcionario <|-- Administrador 
+Funcionario <|-- Administrador
 
-Funcionario <|-- Tecnico 
-Funcionario <|-- Administrador 
-Cliente "1" --> "*" Aparelho : possui 
-Aparelho "1" --> "*" OrdemServico : gera 
-Tecnico "1" --> "*" OrdemServico : executa 
-OrdemServico "1" --> "*" VisitaTecnica : possui 
-OrdemServico "1" --> "1" ContaReceber : gera 
-ContaReceber "1" --> "0..1" Pagamento : recebe 
+%% Relacionamentos
+
+Cliente "1" --> "*" Aparelho : possui
+
+Aparelho "1" --> "*" OrdemServico : gera
+
+Tecnico "1" --> "*" OrdemServico : executa
+
+OrdemServico "1" --> "*" VisitaTecnica : possui
+
+OrdemServico "1" --> "1" ContaReceber : gera
+
+ContaReceber "1" --> "0..1" Pagamento : recebe
+
+Estoque "1" --> "*" Equipamento : controla
+
 OrdemServico "*" --> "*" Equipamento : utiliza
+
+%% Strategy
+
+OrdemServico --> EstrategiaCalculo : utiliza
+
+EstrategiaCalculo <|.. CalculoPadrao
+EstrategiaCalculo <|.. CalculoUrgente
+EstrategiaCalculo <|.. CalculoPorHora
+EstrategiaCalculo <|.. CalculoDomiciliar
+
+%% Factory
+
+EstrategiaFactory --> EstrategiaCalculo : cria
 ```
----
 
 ### Descrição das Entidades
 
@@ -112,140 +160,221 @@ Administrador  | Especialização de FUNCIONARIO para administradores do sistema
 Aparelho       | Entidade que representa os aparelhos dos clientes que serão reparados. Contém informações técnicas: tipo, marca, modelo, numero_serie, cor, observacoes e cliente_id e status.|
 Ordem_Serviço  | Entidade central que representa uma ordem de serviço aberta para reparo. Contém id, data_abertura, data_encerramento, descricao_problema, status, valor_total, cliente_id, tecnico_id e aparelho_id.|
 Equipamento	   | Entidade que representa insumos, ferramentas ou peças do estoque da assistência.|
+Estoque        | A entidade Estoque representa o controle de materiais, peças e equipamentos disponíveis na assistência técnica. Contém id, quantidade_disponivel e quantidade_minima.|
 Visita_Técnica | Entidade que representa visitas realizadas por técnicos na residência do cliente. Contém data_agendamento, data_realizacao, resultado, os_id e tecnico_id e status. |
 Conta_Receber  | Entidade que representa as obrigações financeiras geradas pelas ordens de serviço. |
 Pagamento      | Representa o ato do pagamento em si (transação, comprovante, processamento). Uma CONTA_RECEBER gerar um PAGAMENTO. |
 
 ---
 
-#  Entidade Cliente
+# Diagrama Entidade-Relacionamento (DER)
 
-## Descrição
+```mermaid
+erDiagram
 
-A entidade Cliente representa uma pessoa que solicita serviços de manutenção de equipamentos. Cada cliente poderá possuir um ou mais equipamentos cadastrados no sistema.
-
----
-
-## Atributos
-
-| Atributo | Tipo   | Descrição                      |
-| -------- | ------ | ------------------------------ |
-| id       | Long   | Identificador único do cliente |
-| nome     | String | Nome completo do cliente       |
-| cpf      | String | CPF do cliente                 |
-| telefone | String | Telefone para contato          |
-| email    | String | E-mail do cliente              |
-
----
-
-## Regras de Negócio
-
-O CPF deve ser único no sistema.
-O nome do cliente é obrigatório.
-O telefone é obrigatório.
-O e-mail deve possuir formato válido.
-
----
-
-## Critérios de Aceitação
-
-* [ ] Criar a classe Cliente.
-* [ ] Implementar os atributos especificados.
-* [ ] Configurar chave primária (`id`).
-* [ ] Configurar CPF como único.
-* [ ] Implementar validações básicas.
-* [ ] Criar construtores.
-* [ ] Criar getters e setters.
-* [ ] Criar testes unitários.
-
----
-
-## Implementação Java
-
-```java
-package br.ufrn.assistenciatecnica.model;
-
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-
-@Entity
-@Table(name = "clientes")
-public class Cliente {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @NotBlank
-    @Column(nullable = false)
-    private String nome;
-
-    @Column(unique = true, nullable = false)
-    private String cpf;
-
-    @NotBlank
-    @Column(nullable = false)
-    private String telefone;
-
-    @Email
-    private String email;
-
-    public Cliente() {
-    }
-
-    public Cliente(Long id, String nome, String cpf,
-                   String telefone, String email) {
-        this.id = id;
-        this.nome = nome;
-        this.cpf = cpf;
-        this.telefone = telefone;
-        this.email = email;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getCpf() {
-        return cpf;
-    }
-
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
-
-    public String getTelefone() {
-        return telefone;
-    }
-
-    public void setTelefone(String telefone) {
-        this.telefone = telefone;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
+CLIENTE {
+    int id PK
+    string nome
+    string cpf
+    string telefone
+    string email
 }
+
+APARELHO {
+    int id PK
+    string tipo
+    string marca
+    string modelo
+    string numero_serie
+    string observacoes
+    string status
+    int cliente_id FK
+}
+
+TECNICO {
+    int id PK
+    string especialidade
+}
+
+ORDEM_SERVICO {
+    int id PK
+    date data_abertura
+    date data_encerramento
+    string descricao_problema
+    string status
+    float valor_base
+    float valor_total
+    int aparelho_id FK
+    int tecnico_id FK
+}
+
+VISITA_TECNICA {
+    int id PK
+    date data_agendamento
+    date data_realizacao
+    string resultado
+    string status
+    int os_id FK
+}
+
+ESTOQUE {
+    int id PK
+    int quantidade_disponivel
+    int quantidade_minima
+}
+
+EQUIPAMENTO {
+    int id PK
+    string nome
+    int quantidade
+    float valor_unitario
+    int estoque_id FK
+}
+
+CONTA_RECEBER {
+    int id PK
+    float valor
+    date vencimento
+    string status
+    int os_id FK
+}
+
+PAGAMENTO {
+    int id PK
+    float valor_pago
+    date data_pagamento
+    string forma_pagamento
+    int conta_receber_id FK
+}
+
+CLIENTE ||--o{ APARELHO : possui
+
+APARELHO ||--o{ ORDEM_SERVICO : gera
+
+TECNICO ||--o{ ORDEM_SERVICO : executa
+
+ORDEM_SERVICO ||--o{ VISITA_TECNICA : possui
+
+ORDEM_SERVICO ||--|| CONTA_RECEBER : gera
+
+CONTA_RECEBER ||--o| PAGAMENTO : recebe
+
+ESTOQUE ||--o{ EQUIPAMENTO : controla
+
+ORDEM_SERVICO }o--o{ EQUIPAMENTO : utiliza
 ```
 
----
+# Dicionário de Dados
+
+## CLIENTE
+
+| Campo    | Tipo         | Restrição | Descrição           |
+| -------- | ------------ | --------- | ------------------- |
+| id       | INTEGER      | PK        | Identificador único |
+| nome     | VARCHAR(100) | NOT NULL  | Nome do cliente     |
+| cpf      | VARCHAR(14)  | UNIQUE    | CPF do cliente      |
+| telefone | VARCHAR(20)  | NOT NULL  | Telefone            |
+| email    | VARCHAR(100) |           | E-mail              |
+
+
+
+## APARELHO
+
+| Campo        | Tipo        | Restrição | Descrição            |
+| ------------ | ----------- | --------- | -------------------- |
+| id           | INTEGER     | PK        | Identificador        |
+| tipo         | VARCHAR(50) | NOT NULL  | Tipo do aparelho     |
+| marca        | VARCHAR(50) | NOT NULL  | Marca                |
+| modelo       | VARCHAR(50) | NOT NULL  | Modelo               |
+| numero_serie | VARCHAR(50) | UNIQUE    | Número de série      |
+| observacoes  | TEXT        |           | Observações          |
+| status       | VARCHAR(20) |           | Situação atual       |
+| cliente_id   | INTEGER     | FK        | Cliente proprietário |
+
+
+
+## TECNICO
+
+| Campo         | Tipo         | Restrição | Descrição       |
+| ------------- | ------------ | --------- | --------------- |
+| id            | INTEGER      | PK        | Identificador   |
+| especialidade | VARCHAR(100) |           | Área de atuação |
+
+
+
+## ORDEM_SERVICO
+
+| Campo              | Tipo          | Restrição | Descrição            |
+| ------------------ | ------------- | --------- | -------------------- |
+| id                 | INTEGER       | PK        | Identificador        |
+| data_abertura      | DATE          | NOT NULL  | Data de abertura     |
+| data_encerramento  | DATE          |           | Data de encerramento |
+| descricao_problema | TEXT          | NOT NULL  | Problema relatado    |
+| status             | VARCHAR(20)   | NOT NULL  | Status da ordem      |
+| valor_base         | DECIMAL(10,2) |           | Valor inicial        |
+| valor_total        | DECIMAL(10,2) |           | Valor final          |
+| aparelho_id        | INTEGER       | FK        | Aparelho associado   |
+| tecnico_id         | INTEGER       | FK        | Técnico responsável  |
+
+
+
+## VISITA_TECNICA
+
+| Campo            | Tipo        | Restrição | Descrição           |
+| ---------------- | ----------- | --------- | ------------------- |
+| id               | INTEGER     | PK        | Identificador       |
+| data_agendamento | DATE        | NOT NULL  | Data agendada       |
+| data_realizacao  | DATE        |           | Data realizada      |
+| resultado        | TEXT        |           | Resultado da visita |
+| status           | VARCHAR(20) |           | Status da visita    |
+| os_id            | INTEGER     | FK        | Ordem de serviço    |
+
+
+
+## ESTOQUE
+
+| Campo                 | Tipo    | Restrição | Descrição             |
+| --------------------- | ------- | --------- | --------------------- |
+| id                    | INTEGER | PK        | Identificador         |
+| quantidade_disponivel | INTEGER | NOT NULL  | Quantidade disponível |
+| quantidade_minima     | INTEGER | NOT NULL  | Estoque mínimo        |
+
+
+
+## EQUIPAMENTO
+
+| Campo          | Tipo          | Restrição | Descrição           |
+| -------------- | ------------- | --------- | ------------------- |
+| id             | INTEGER       | PK        | Identificador       |
+| nome           | VARCHAR(100)  | NOT NULL  | Nome da peça        |
+| quantidade     | INTEGER       | NOT NULL  | Quantidade          |
+| valor_unitario | DECIMAL(10,2) | NOT NULL  | Valor unitário      |
+| estoque_id     | INTEGER       | FK        | Estoque relacionado |
+
+
+
+## CONTA_RECEBER
+
+| Campo      | Tipo          | Restrição | Descrição                    |
+| ---------- | ------------- | --------- | ---------------------------- |
+| id         | INTEGER       | PK        | Identificador                |
+| valor      | DECIMAL(10,2) | NOT NULL  | Valor da cobrança            |
+| vencimento | DATE          | NOT NULL  | Data de vencimento           |
+| status     | VARCHAR(20)   | NOT NULL  | Situação da cobrança         |
+| os_id      | INTEGER       | FK        | Ordem de serviço relacionada |
+
+
+
+## PAGAMENTO
+
+| Campo            | Tipo          | Restrição | Descrição          |
+| ---------------- | ------------- | --------- | ------------------ |
+| id               | INTEGER       | PK        | Identificador      |
+| valor_pago       | DECIMAL(10,2) | NOT NULL  | Valor pago         |
+| data_pagamento   | DATE          | NOT NULL  | Data do pagamento  |
+| forma_pagamento  | VARCHAR(30)   | NOT NULL  | Forma de pagamento |
+| conta_receber_id | INTEGER       | FK        | Conta recebida     |
+
 
 
 
