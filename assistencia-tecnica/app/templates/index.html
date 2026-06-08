@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Assistência Técnica{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">Bem-vindo!</h1>
+            <p class="lead">Sistema de Gerenciamento de Assistência Técnica</p>
+            <hr class="my-4" />
+            <p>Use o menu acima para acessar as diferentes seções do sistema.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">👥 Clientes</div>
+            <div class="card-body">
+                <p class="card-text">Gerenciar clientes cadastrados.</p>
+                <a href="/clientes" class="btn btn-primary btn-sm">Acessar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">🖥️ Equipamentos</div>
+            <div class="card-body">
+                <p class="card-text">Cadastrar e gerenciar equipamentos.</p>
+                <a href="/equipamentos" class="btn btn-primary btn-sm">Acessar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">🔧 Ordens de Serviço</div>
+            <div class="card-body">
+                <p class="card-text">Criar e acompanhar ordens de serviço.</p>
+                <a href="/ordens" class="btn btn-primary btn-sm">Acessar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">👨‍🔧 Técnicos</div>
+            <div class="card-body">
+                <p class="card-text">Gerenciar técnicos.</p>
+                <a href="/tecnicos" class="btn btn-primary btn-sm">Acessar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">📦 Estoque</div>
+            <div class="card-body">
+                <p class="card-text">Controlar itens em estoque.</p>
+                <a href="/estoque" class="btn btn-primary btn-sm">Acessar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">💳 Pagamentos</div>
+            <div class="card-body">
+                <p class="card-text">Registrar e acompanhar pagamentos.</p>
+                <a href="/pagamentos" class="btn btn-primary btn-sm">Acessar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

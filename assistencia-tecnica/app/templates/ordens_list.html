@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Ordens de Serviço - Assistência Técnica{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Ordens de Serviço</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalOrdem">+ Nova Ordem</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">Lista de Ordens de Serviço</div>
+            <div class="card-body">
+                {% if ordens %}
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Aparelho</th>
+                            <th>Data Abertura</th>
+                            <th>Status</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ordem in ordens %}
+                        <tr>
+                            <td>#{{ ordem.id }}</td>
+                            <td>{{ ordem.cliente.nome if ordem.cliente else 'N/A' }}</td>
+                            <td>{{ ordem.aparelho.tipo if ordem.aparelho else 'N/A' }}</td>
+                            <td>{{ ordem.data_abertura.strftime('%d/%m/%Y') if ordem.data_abertura else 'N/A' }}</td>
+                            <td><span class="badge bg-info">{{ ordem.status or 'aberta' }}</span></td>
+                            <td>R$ {{ "%.2f"|format(ordem.valor_total or 0) }}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm" onclick="calcularOrdem({{ ordem.id }})">Calcular</button>
+                                <button class="btn btn-warning btn-sm" onclick="editarOrdem({{ ordem.id }})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="apagarOrdem({{ ordem.id }})">Apagar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info">Nenhuma ordem de serviço cadastrada.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Nova Ordem -->
+<div class="modal fade" id="modalOrdem" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Ordem de Serviço</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formOrdem" method="POST" action="/ordens">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cliente_id" class="form-label">Cliente *</label>
+                            <select class="form-control" id="cliente_id" name="cliente_id" required>
+                                <option value="">Selecione um cliente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="aparelho_id" class="form-label">Aparelho *</label>
+                            <select class="form-control" id="aparelho_id" name="aparelho_id" required>
+                                <option value="">Selecione um aparelho</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tecnico_id" class="form-label">Técnico *</label>
+                            <select class="form-control" id="tecnico_id" name="tecnico_id" required>
+                                <option value="">Selecione um técnico</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_calculo" class="form-label">Tipo de Cálculo *</label>
+                            <select class="form-control" id="tipo_calculo" name="tipo_calculo" required>
+                                <option value="">Selecione</option>
+                                <option value="padrao">Padrão</option>
+                                <option value="urgente">Urgente</option>
+                                <option value="domiciliar">Domiciliar</option>
+                                <option value="por_hora">Por Hora</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descricao_problema" class="form-label">Descrição do Problema *</label>
+                        <textarea class="form-control" id="descricao_problema" name="descricao_problema" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="valor_base" class="form-label">Valor Base (R$)</label>
+                        <input type="number" class="form-control" id="valor_base" name="valor_base" step="0.01" min="0" value="100.00" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="tempo_estimado" class="form-label">Tempo Estimado (horas)</label>
+                        <input type="number" class="form-control" id="tempo_estimado" name="tempo_estimado" step="0.5" min="0" value="1" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Ordem</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Carregar dados dos dropdowns ao abrir o modal
+    const modalOrdem = document.getElementById('modalOrdem');
+    modalOrdem?.addEventListener('show.bs.modal', async () => {
+        // Carregar clientes
+        const clientesResp = await fetch('/clientes');
+        const clientes = await clientesResp.json();
+        const selectCliente = document.getElementById('cliente_id');
+        selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
+        clientes.forEach(c => {
+            selectCliente.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+        });
+
+        // Carregar aparelhos
+        const aparelhosResp = await fetch('/aparelhos');
+        const aparelhos = await aparelhosResp.json();
+        const selectAparelho = document.getElementById('aparelho_id');
+        selectAparelho.innerHTML = '<option value="">Selecione um aparelho</option>';
+        aparelhos.forEach(a => {
+            selectAparelho.innerHTML += `<option value="${a.id}">${a.tipo} - ${a.marca}</option>`;
+        });
+
+        // Carregar técnicos
+        const tecnicosResp = await fetch('/funcionarios');
+        const tecnicos = tecnicosResp.ok ? await tecnicosResp.json() : [];
+        const selectTecnico = document.getElementById('tecnico_id');
+        selectTecnico.innerHTML = '<option value="">Selecione um técnico</option>';
+        tecnicos.forEach(t => {
+            selectTecnico.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
+        });
+    });
+
+    document.getElementById('formOrdem').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/ordens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                alert('Ordem de serviço criada com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro ao criar ordem de serviço');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com servidor');
+        }
+    });
+
+    function calcularOrdem(id) {
+        alert('Redirecionando para cálculo...');
+        // Em produção, abriria uma página de detalhes com o cálculo
+    }
+
+    function editarOrdem(id) {
+        alert('Funcionalidade de edição em desenvolvimento');
+    }
+
+    function apagarOrdem(id) {
+        if (confirm('Tem certeza que deseja apagar esta ordem de serviço?')) {
+            alert('Funcionalidade de exclusão em desenvolvimento');
+        }
+    }
+</script>
+{% endblock %}

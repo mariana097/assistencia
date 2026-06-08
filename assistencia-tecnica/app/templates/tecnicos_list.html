@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Técnicos - Assistência Técnica{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Técnicos</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalTecnico">+ Novo Técnico</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">Lista de Técnicos</div>
+            <div class="card-body">
+                {% if tecnicos %}
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>CPF</th>
+                            <th>Salário</th>
+                            <th>Especialidade</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tecnico in tecnicos %}
+                        <tr>
+                            <td>{{ tecnico.id }}</td>
+                            <td>{{ tecnico.nome }}</td>
+                            <td>{{ tecnico.cpf }}</td>
+                            <td>R$ {{ "%.2f"|format(tecnico.salario or 0) }}</td>
+                            <td>{{ tecnico.especialidade or 'N/A' }}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editarTecnico({{ tecnico.id }})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="apagarTecnico({{ tecnico.id }})">Apagar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info">Nenhum técnico cadastrado.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Novo Técnico -->
+<div class="modal fade" id="modalTecnico" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Técnico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formTecnico" method="POST" action="/tecnicos">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="cpf" class="form-label">CPF *</label>
+                        <input type="text" class="form-control" id="cpf" name="cpf" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="salario" class="form-label">Salário (R$) *</label>
+                        <input type="number" class="form-control" id="salario" name="salario" step="0.01" min="0" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="especialidade" class="form-label">Especialidade</label>
+                        <input type="text" class="form-control" id="especialidade" name="especialidade" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('formTecnico').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/tecnicos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                alert('Técnico salvo com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro ao salvar técnico');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com servidor');
+        }
+    });
+
+    function editarTecnico(id) {
+        alert('Funcionalidade de edição em desenvolvimento');
+    }
+
+    function apagarTecnico(id) {
+        if (confirm('Tem certeza que deseja apagar este técnico?')) {
+            alert('Funcionalidade de exclusão em desenvolvimento');
+        }
+    }
+</script>
+{% endblock %}

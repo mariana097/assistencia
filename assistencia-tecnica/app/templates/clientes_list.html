@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - Assistência Técnica{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Clientes</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCliente">+ Novo Cliente</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">Lista de Clientes</div>
+            <div class="card-body">
+                {% if clientes %}
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>CPF</th>
+                            <th>Telefone</th>
+                            <th>Email</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.id }}</td>
+                            <td>{{ cliente.nome }}</td>
+                            <td>{{ cliente.cpf }}</td>
+                            <td>{{ cliente.telefone or 'N/A' }}</td>
+                            <td>{{ cliente.email or 'N/A' }}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editarCliente({{ cliente.id }})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="apagarCliente({{ cliente.id }})">Apagar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info">Nenhum cliente cadastrado.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Novo/Editar Cliente -->
+<div class="modal fade" id="modalCliente" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formCliente" method="POST" action="/clientes">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="cpf" class="form-label">CPF *</label>
+                        <input type="text" class="form-control" id="cpf" name="cpf" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefone" class="form-label">Telefone</label>
+                        <input type="text" class="form-control" id="telefone" name="telefone" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="endereco" class="form-label">Endereço</label>
+                        <textarea class="form-control" id="endereco" name="endereco" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('formCliente').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/clientes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                alert('Cliente salvo com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro ao salvar cliente');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com servidor');
+        }
+    });
+
+    function editarCliente(id) {
+        alert('Funcionalidade de edição em desenvolvimento');
+    }
+
+    function apagarCliente(id) {
+        if (confirm('Tem certeza que deseja apagar este cliente?')) {
+            alert('Funcionalidade de exclusão em desenvolvimento');
+        }
+    }
+</script>
+{% endblock %}

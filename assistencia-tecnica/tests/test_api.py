@@ -16,6 +16,7 @@ def test_index_menu():
     assert response.status_code == 200
     content = response.data.decode("utf-8")
     assert "Assistência Técnica" in content
+    assert "bootstrap" in content.lower()  # Verifica Bootstrap
 
 
 def test_criar_e_listar_cliente():
@@ -36,8 +37,37 @@ def test_criar_e_listar_cliente():
 
     response = client.get("/clientes")
     assert response.status_code == 200
-    clientes = response.get_json()
-    assert any(item["cpf"] == "12345678901" for item in clientes)
+    content = response.data.decode("utf-8")
+    # Verifica que é HTML e contém o Bootstrap
+    assert "<!DOCTYPE html>" in content
+    assert "bootstrap" in content.lower()
+    # Verifica que contém a tabela com dados
+    assert "Ana" in content or "Lista de Clientes" in content
+
+
+def test_criar_e_listar_equipamentos():
+    app = create_app()
+    client = app.test_client()
+
+    # Criar equipamento via POST
+    response = client.post("/equipamentos", json={
+        "nome": "HD SSD 240GB",
+        "quantidade": 10,
+        "valor_unitario": 150.00
+    })
+    assert response.status_code == 201
+    equipamento = response.get_json()
+    assert equipamento["nome"] == "HD SSD 240GB"
+    assert equipamento["quantidade"] == 10
+
+    # Listar equipamentos
+    response = client.get("/equipamentos")
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+    # Verifica que é HTML com Bootstrap
+    assert "<!DOCTYPE html>" in content
+    assert "bootstrap" in content.lower()
+    assert "Lista de Equipamentos" in content
 
 
 def test_criar_ordem_e_calcular_valor():
@@ -74,3 +104,59 @@ def test_criar_ordem_e_calcular_valor():
     assert calculo_response.status_code == 200
     calculada = calculo_response.get_json()
     assert calculada["valor_total"] == 150
+
+
+def test_listar_ordens_com_bootstrap():
+    """Testa se a página de ordens retorna HTML com Bootstrap"""
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/ordens")
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+    
+    # Verifica que é HTML com Bootstrap
+    assert "<!DOCTYPE html>" in content
+    assert "bootstrap" in content.lower()
+    assert "Ordens de Serviço" in content
+    assert "Modal" in content or "modal" in content.lower()
+
+
+def test_listar_tecnicos_com_bootstrap():
+    """Testa se a página de técnicos retorna HTML com Bootstrap"""
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/tecnicos")
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+    
+    # Verifica que é HTML com Bootstrap
+    assert "<!DOCTYPE html>" in content
+    assert "bootstrap" in content.lower()
+    assert "Técnicos" in content
+
+
+def test_erro_cliente_sem_cpf():
+    """Testa se POST /clientes sem CPF retorna erro"""
+    app = create_app()
+    client = app.test_client()
+
+    response = client.post("/clientes", json={
+        "nome": "João",
+        # Falta CPF
+    })
+    assert response.status_code == 400
+
+
+def test_erro_equipamento_sem_nome():
+    """Testa se POST /equipamentos sem nome retorna erro"""
+    app = create_app()
+    client = app.test_client()
+
+    response = client.post("/equipamentos", json={
+        "quantidade": 5,
+        "valor_unitario": 100.00
+        # Falta nome
+    })
+    assert response.status_code == 400

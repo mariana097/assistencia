@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Equipamentos - Assistência Técnica{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Equipamentos</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalEquipamento">+ Novo Equipamento</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">Lista de Equipamentos</div>
+            <div class="card-body">
+                {% if equipamentos %}
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Quantidade</th>
+                            <th>Valor Unitário</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos %}
+                        <tr>
+                            <td>{{ equipamento.id }}</td>
+                            <td>{{ equipamento.nome }}</td>
+                            <td>{{ equipamento.quantidade }}</td>
+                            <td>R$ {{ "%.2f"|format(equipamento.valor_unitario or 0) }}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editarEquipamento({{ equipamento.id }})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="apagarEquipamento({{ equipamento.id }})">Apagar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info">Nenhum equipamento cadastrado.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Novo/Editar Equipamento -->
+<div class="modal fade" id="modalEquipamento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Equipamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEquipamento" method="POST" action="/equipamentos">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantidade" class="form-label">Quantidade *</label>
+                        <input type="number" class="form-control" id="quantidade" name="quantidade" value="1" min="1" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="valor_unitario" class="form-label">Valor Unitário (R$) *</label>
+                        <input type="number" class="form-control" id="valor_unitario" name="valor_unitario" step="0.01" min="0" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('formEquipamento').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/equipamentos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                alert('Equipamento salvo com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro ao salvar equipamento');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com servidor');
+        }
+    });
+
+    function editarEquipamento(id) {
+        alert('Funcionalidade de edição em desenvolvimento');
+    }
+
+    function apagarEquipamento(id) {
+        if (confirm('Tem certeza que deseja apagar este equipamento?')) {
+            alert('Funcionalidade de exclusão em desenvolvimento');
+        }
+    }
+</script>
+{% endblock %}

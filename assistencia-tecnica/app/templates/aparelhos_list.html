@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Aparelhos - Assistência Técnica{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Aparelhos</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAparelho">+ Novo Aparelho</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">Lista de Aparelhos</div>
+            <div class="card-body">
+                {% if aparelhos %}
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Série</th>
+                            <th>Cliente</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aparelho in aparelhos %}
+                        <tr>
+                            <td>#{{ aparelho.id }}</td>
+                            <td>{{ aparelho.tipo }}</td>
+                            <td>{{ aparelho.marca }}</td>
+                            <td>{{ aparelho.modelo }}</td>
+                            <td>{{ aparelho.numero_serie or 'N/A' }}</td>
+                            <td>{{ aparelho.cliente.nome if aparelho.cliente else 'N/A' }}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editarAparelho({{ aparelho.id }})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="apagarAparelho({{ aparelho.id }})">Apagar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info">Nenhum aparelho cadastrado.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Novo Aparelho -->
+<div class="modal fade" id="modalAparelho" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Aparelho</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formAparelho" method="POST" action="/aparelhos">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo *</label>
+                            <input type="text" class="form-control" id="tipo" name="tipo" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="marca" class="form-label">Marca *</label>
+                            <input type="text" class="form-control" id="marca" name="marca" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modelo" class="form-label">Modelo *</label>
+                            <input type="text" class="form-control" id="modelo" name="modelo" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_serie" class="form-label">Número de Série</label>
+                            <input type="text" class="form-control" id="numero_serie" name="numero_serie" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cliente_id" class="form-label">Cliente *</label>
+                        <select class="form-control" id="cliente_id" name="cliente_id" required>
+                            <option value="">Selecione um cliente</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Carregar clientes ao abrir o modal
+    const modalAparelho = document.getElementById('modalAparelho');
+    modalAparelho?.addEventListener('show.bs.modal', async () => {
+        const clientesResp = await fetch('/clientes');
+        const clientes = await clientesResp.json();
+        const selectCliente = document.getElementById('cliente_id');
+        selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
+        clientes.forEach(c => {
+            selectCliente.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+        });
+    });
+
+    document.getElementById('formAparelho').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/aparelhos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                alert('Aparelho salvo com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro ao salvar aparelho');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com servidor');
+        }
+    });
+
+    function editarAparelho(id) {
+        alert('Funcionalidade de edição em desenvolvimento');
+    }
+
+    function apagarAparelho(id) {
+        if (confirm('Tem certeza que deseja apagar este aparelho?')) {
+            alert('Funcionalidade de exclusão em desenvolvimento');
+        }
+    }
+</script>
+{% endblock %}
