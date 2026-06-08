@@ -10,13 +10,19 @@ Sistema de Gestão de Assistência Técnica
 
 ---
 
-# 1. Objetivo
+# 1. API
+
+Link: https://psychic-succotash-jwpp47xrgj525xx7-5001.app.github.dev/
+
+---
+
+# 2. Objetivo
 
 Desenvolver um sistema para gerenciar clientes, aparelhos, técnicos, estoque, pagamentos e ordens de serviço de uma assistência técnica, aplicando conceitos de Programação Orientada a Objetos, princípios SOLID e os padrões de projeto **Strategy** e **Factory Method**.
 
 ---
 
-# 2. Objetivos Específicos
+# 3. Objetivos Específicos
 
 * Cadastrar clientes.
 * Cadastrar aparelhos.
@@ -30,7 +36,7 @@ Desenvolver um sistema para gerenciar clientes, aparelhos, técnicos, estoque, p
 
 ---
 
-# 3. Tecnologias
+# 4. Tecnologias
 
 * Python 3.12
 * Flask
@@ -44,7 +50,7 @@ Desenvolver um sistema para gerenciar clientes, aparelhos, técnicos, estoque, p
 
 ---
 
-# 4. Conceitos de POO Aplicados
+# 5. Conceitos de POO Aplicados
 
 ## Encapsulamento
 
@@ -67,7 +73,7 @@ As entidades representam objetos do mundo real da assistência técnica.
 
 ---
 
-# 5. Entidades do Sistema
+# 6. Entidades do Sistema
 
 ## Cliente
 
@@ -147,7 +153,7 @@ Herda de Funcionario.
 
 ---
 
-# 6. Padrão Strategy
+# 7. Padrão Strategy
 
 ## Objetivo
 
@@ -213,7 +219,7 @@ class CalculoDomiciliar(EstrategiaCalculo):
 
 ---
 
-# 7. Padrão Factory Method
+# 8. Padrão Factory Method
 
 ## Objetivo
 
@@ -243,7 +249,7 @@ class EstrategiaFactory:
 
 ---
 
-# 8. Utilização dos Padrões
+# 9. Utilização dos Padrões
 
 ```python
 tipo = "urgente"
@@ -263,7 +269,7 @@ Resultado:
 
 ---
 
-# 9. Benefícios Obtidos
+# 10. Benefícios Obtidos
 
 ## Strategy
 
@@ -279,7 +285,7 @@ Resultado:
 
 ---
 
-# 10. Princípios SOLID Aplicados
+# 11. Princípios SOLID Aplicados
 
 ## SRP
 
@@ -303,7 +309,7 @@ A Ordem de Serviço depende da abstração EstrategiaCalculo.
 
 ---
 
-# 11. Testes Unitários
+# 12. Testes Unitários
 
 Utilização do Pytest para validar:
 
@@ -317,7 +323,7 @@ Utilização do Pytest para validar:
 
 ---
 
-# 12. Estrutura de Pastas do Projeto
+# 13. Estrutura de Pastas do Projeto
 
 ```text
 assistencia-tecnica/
@@ -413,6 +419,6 @@ assistencia-tecnica/
 └── run.py
 ```
 
-# 13. Conclusão
+# 14. Conclusão
 
 O projeto utiliza conceitos fundamentais de Programação Orientada a Objetos, aplicando herança, polimorfismo, encapsulamento e abstração. Além disso, emprega os padrões de projeto Strategy e Factory Method para tornar o sistema flexível, extensível e aderente aos princípios SOLID, resultando em uma solução organizada e de fácil manutenção.
