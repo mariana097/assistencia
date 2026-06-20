@@ -3,4 +3,3 @@ SQLAlchemy
 flask-cors
 gunicorn
 pydantic
-web: gunicorn wsgi:app
