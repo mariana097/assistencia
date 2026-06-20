@@ -142,7 +142,7 @@
             selectAparelho.innerHTML += `<option value="${a.id}">${a.tipo} - ${a.marca}</option>`;
         });
 
-        const tecnicosResp = await fetch('/funcionarios');
+        const tecnicosResp = await fetch('/tecnicos?json=1');
         const tecnicos = tecnicosResp.ok ? await tecnicosResp.json() : [];
         const selectTecnico = document.getElementById('tecnico_id');
         selectTecnico.innerHTML = '<option value="">Selecione um técnico</option>';

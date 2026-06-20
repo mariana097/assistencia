@@ -66,8 +66,19 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="tipo" class="form-label">Tipo *</label>
-                            <input type="text" class="form-control" id="tipo" name="tipo" required />
-                        </div>
+                            <select class="form-control" id="tipo" name="tipo" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="Smartphone">Smartphone</option>
+                                <option value="Notebook">Notebook</option>
+                                <option value="Computador">Computador</option>
+                                <option value="Tablet">Tablet</option>
+                                <option value="Impressora">Impressora</option>
+                                <option value="Monitor">Monitor</option>
+                                <option value="Televisão">Televisão</option>
+                                <option value="Console">Console</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>                        
                         <div class="col-md-6 mb-3">
                             <label for="marca" class="form-label">Marca *</label>
                             <input type="text" class="form-control" id="marca" name="marca" required />

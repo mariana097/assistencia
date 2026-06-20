@@ -198,7 +198,13 @@ def create_app():
             return jsonify(serialize_ordem(ordem)), 201
 
         ordens = controller.listar_ordens()
-        return render_template("ordens_list.html", ordens=ordens)
+        from app.models.funcionario import Tecnico
+        tecnicos = get_db().query(Tecnico).all()
+        return render_template(
+            "ordens_list.html",
+            ordens=ordens,
+            tecnicos=tecnicos
+)
 
     @app.route("/ordens/<int:ordem_id>", methods=["GET", "PUT", "DELETE"])
     def ordem_detail(ordem_id):
@@ -258,6 +264,8 @@ def create_app():
         from app.models.funcionario import Tecnico
 
         tecnicos = db.query(Tecnico).all()
+        if request.args.get("json") is not None:
+            return jsonify([serialize_funcionario(t) for t in tecnicos])
         return render_template("tecnicos_list.html", tecnicos=tecnicos)
 
     @app.route("/tecnicos/<int:tecnico_id>", methods=["GET", "PUT", "DELETE"])
