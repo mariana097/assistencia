@@ -60,6 +60,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formCliente" method="POST" action="/clientes">
+                <input type="hidden" id="cliente_id_field" name="cliente_id" />
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="nome" class="form-label">Nome *</label>
@@ -92,23 +93,32 @@
 </div>
 
 <script>
-    document.getElementById('formCliente').addEventListener('submit', async (e) => {
+    const formCliente = document.getElementById('formCliente');
+    const modalCliente = document.getElementById('modalCliente');
+    const clienteIdInput = document.getElementById('cliente_id_field');
+    const clienteTitle = modalCliente.querySelector('.modal-title');
+
+    formCliente.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        
+        const clienteId = clienteIdInput.value;
+        const url = clienteId ? `/clientes/${clienteId}` : '/clientes';
+        const method = clienteId ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch('/clientes', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (response.ok) {
-                alert('Cliente salvo com sucesso!');
+                alert(clienteId ? 'Cliente atualizado com sucesso!' : 'Cliente salvo com sucesso!');
                 location.reload();
             } else {
-                alert('Erro ao salvar cliente');
+                const errorData = await response.json().catch(() => ({}));
+                alert(errorData.description || 'Erro ao salvar cliente');
             }
         } catch (error) {
             console.error('Erro:', error);
@@ -117,13 +127,45 @@
     });
 
     function editarCliente(id) {
-        alert('Funcionalidade de edição em desenvolvimento');
+        fetch(`/clientes/${id}`)
+            .then(res => res.json())
+            .then(cliente => {
+                document.getElementById('nome').value = cliente.nome || '';
+                document.getElementById('cpf').value = cliente.cpf || '';
+                document.getElementById('telefone').value = cliente.telefone || '';
+                document.getElementById('email').value = cliente.email || '';
+                document.getElementById('endereco').value = cliente.endereco || '';
+                clienteIdInput.value = cliente.id;
+                clienteTitle.textContent = 'Editar Cliente';
+                new bootstrap.Modal(modalCliente).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao carregar cliente');
+            });
     }
 
     function apagarCliente(id) {
         if (confirm('Tem certeza que deseja apagar este cliente?')) {
-            alert('Funcionalidade de exclusão em desenvolvimento');
+            fetch(`/clientes/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao apagar cliente');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao apagar cliente');
+                });
         }
     }
+
+    modalCliente.addEventListener('hidden.bs.modal', () => {
+        formCliente.reset();
+        clienteIdInput.value = '';
+        clienteTitle.textContent = 'Novo Cliente';
+    });
 </script>
 {% endblock %}

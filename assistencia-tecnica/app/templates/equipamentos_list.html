@@ -20,9 +20,11 @@
                     <thead class="table-dark">
                         <tr>
                             <th>ID</th>
-                            <th>Nome</th>
+                            <th>Equipamento</th>
                             <th>Quantidade</th>
                             <th>Valor Unitário</th>
+                            <th>Fornecedor</th>
+                            <th>Observações</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -33,6 +35,8 @@
                             <td>{{ equipamento.nome }}</td>
                             <td>{{ equipamento.quantidade }}</td>
                             <td>R$ {{ "%.2f"|format(equipamento.valor_unitario or 0) }}</td>
+                            <td>{{ equipamento.fornecedor or '-' }}</td>
+                            <td>{{ equipamento.observacoes or '-' }}</td>
                             <td>
                                 <button class="btn btn-warning btn-sm" onclick="editarEquipamento({{ equipamento.id }})">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="apagarEquipamento({{ equipamento.id }})">Apagar</button>
@@ -58,18 +62,40 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formEquipamento" method="POST" action="/equipamentos">
+                <input type="hidden" id="equipamento_id_field" name="equipamento_id" />
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="nome" class="form-label">Nome *</label>
-                        <input type="text" class="form-control" id="nome" name="nome" required />
+                        <label for="nome" class="form-label">Equipamento *</label>
+                        <select class="form-control" id="nome" name="nome" required>
+                            <option value="">Selecione um equipamento</option>
+                            <option value="Tela Samsung A14">Tela Samsung A14</option>
+                            <option value="Bateria iPhone 11">Bateria iPhone 11</option>
+                            <option value="Carregador USB-C 20W">Carregador USB-C 20W</option>
+                            <option value="Cabo Flat Notebook Dell Inspiron 15">Cabo Flat Notebook Dell Inspiron 15</option>
+                            <option value="HD SSD 480GB">HD SSD 480GB</option>
+                            <option value="Memória RAM DDR4 8GB">Memória RAM DDR4 8GB</option>
+                            <option value="Fonte ATX 500W">Fonte ATX 500W</option>
+                            <option value="Mouse USB">Mouse USB</option>
+                            <option value="Teclado USB">Teclado USB</option>
+                            <option value="Placa-Mãe ASUS H510M">Placa-Mãe ASUS H510M</option>
+                            <option value="Outro">Outro (informar no campo de observações)</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="quantidade" class="form-label">Quantidade *</label>
                         <input type="number" class="form-control" id="quantidade" name="quantidade" value="1" min="1" required />
                     </div>
                     <div class="mb-3">
-                        <label for="valor_unitario" class="form-label">Valor Unitário (R$) *</label>
+                        <label for="valor_unitario" class="form-label">Preço Unitário (R$) *</label>
                         <input type="number" class="form-control" id="valor_unitario" name="valor_unitario" step="0.01" min="0" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="fornecedor" class="form-label">Fornecedor</label>
+                        <input type="text" class="form-control" id="fornecedor" name="fornecedor" placeholder="Ex: TechParts LTDA" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3" placeholder="Detalhes adicionais do item"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -82,23 +108,32 @@
 </div>
 
 <script>
-    document.getElementById('formEquipamento').addEventListener('submit', async (e) => {
+    const formEquipamento = document.getElementById('formEquipamento');
+    const modalEquipamento = document.getElementById('modalEquipamento');
+    const equipamentoIdInput = document.getElementById('equipamento_id_field');
+    const equipamentoTitle = modalEquipamento.querySelector('.modal-title');
+
+    formEquipamento.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        
+        const equipamentoId = equipamentoIdInput.value;
+        const url = equipamentoId ? `/equipamentos/${equipamentoId}` : '/equipamentos';
+        const method = equipamentoId ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch('/equipamentos', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (response.ok) {
-                alert('Equipamento salvo com sucesso!');
+                alert(equipamentoId ? 'Equipamento atualizado com sucesso!' : 'Equipamento salvo com sucesso!');
                 location.reload();
             } else {
-                alert('Erro ao salvar equipamento');
+                const errorData = await response.json().catch(() => ({}));
+                alert(errorData.description || 'Erro ao salvar equipamento');
             }
         } catch (error) {
             console.error('Erro:', error);
@@ -107,13 +142,45 @@
     });
 
     function editarEquipamento(id) {
-        alert('Funcionalidade de edição em desenvolvimento');
+        fetch(`/equipamentos/${id}`)
+            .then(res => res.json())
+            .then(equipamento => {
+                document.getElementById('nome').value = equipamento.nome || '';
+                document.getElementById('quantidade').value = equipamento.quantidade || 1;
+                document.getElementById('valor_unitario').value = equipamento.valor_unitario || 0;
+                document.getElementById('fornecedor').value = equipamento.fornecedor || '';
+                document.getElementById('observacoes').value = equipamento.observacoes || '';
+                equipamentoIdInput.value = equipamento.id;
+                equipamentoTitle.textContent = 'Editar Equipamento';
+                new bootstrap.Modal(modalEquipamento).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao carregar equipamento');
+            });
     }
 
     function apagarEquipamento(id) {
         if (confirm('Tem certeza que deseja apagar este equipamento?')) {
-            alert('Funcionalidade de exclusão em desenvolvimento');
+            fetch(`/equipamentos/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao apagar equipamento');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao apagar equipamento');
+                });
         }
     }
+
+    modalEquipamento.addEventListener('hidden.bs.modal', () => {
+        formEquipamento.reset();
+        equipamentoIdInput.value = '';
+        equipamentoTitle.textContent = 'Novo Equipamento';
+    });
 </script>
 {% endblock %}

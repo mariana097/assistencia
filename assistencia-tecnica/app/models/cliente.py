@@ -14,3 +14,4 @@ class Cliente(Base):
     endereco = Column(String(255), nullable=True)
 
     aparelhos = relationship("Aparelho", back_populates="cliente", cascade="all, delete-orphan")
+    pagamentos = relationship("Pagamento", back_populates="cliente", cascade="all, delete-orphan")

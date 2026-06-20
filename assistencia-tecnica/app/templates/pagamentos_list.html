@@ -20,6 +20,7 @@
                     <thead class="table-dark">
                         <tr>
                             <th>ID</th>
+                            <th>Cliente</th>
                             <th>Conta a Receber</th>
                             <th>Valor Pago</th>
                             <th>Data Pagamento</th>
@@ -31,6 +32,7 @@
                         {% for pagamento in pagamentos %}
                         <tr>
                             <td>#{{ pagamento.id }}</td>
+                            <td>{{ pagamento.cliente.nome if pagamento.cliente else pagamento.cliente_id }}</td>
                             <td>{{ pagamento.conta_receber_id or 'N/A' }}</td>
                             <td>R$ {{ "%.2f"|format(pagamento.valor_pago or 0) }}</td>
                             <td>{{ pagamento.data_pagamento.strftime('%d/%m/%Y') if pagamento.data_pagamento else 'N/A' }}</td>
@@ -62,23 +64,49 @@
             <form id="formPagamento" method="POST" action="/pagamentos">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="conta_receber_id" class="form-label">Conta a Receber *</label>
-                        <input type="number" class="form-control" id="conta_receber_id" name="conta_receber_id" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="valor_pago" class="form-label">Valor Pago (R$) *</label>
-                        <input type="number" class="form-control" id="valor_pago" name="valor_pago" step="0.01" min="0" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="forma_pagamento" class="form-label">Forma de Pagamento *</label>
-                        <select class="form-control" id="forma_pagamento" name="forma_pagamento" required>
-                            <option value="">Selecione</option>
-                            <option value="dinheiro">Dinheiro</option>
-                            <option value="cheque">Cheque</option>
-                            <option value="cartao_credito">Cartão de Crédito</option>
-                            <option value="cartao_debito">Cartão de Débito</option>
-                            <option value="transferencia">Transferência</option>
+                        <label for="cliente_id" class="form-label">Cliente *</label>
+                        <select class="form-control" id="cliente_id" name="cliente_id" required>
+                            <option value="">Selecione o cliente</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="conta_receber_id" class="form-label">Conta a Receber *</label>
+                        <select class="form-control" id="conta_receber_id" name="conta_receber_id" required>
+                            <option value="">Selecione a conta</option>
+                        </select>
+                    </div>
+                    <div id="resumoConta" class="alert alert-info d-none"></div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_pagamento" class="form-label">Data do Pagamento *</label>
+                            <input type="date" class="form-control" id="data_pagamento" name="data_pagamento" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="valor_pago" class="form-label">Valor Pago (R$) *</label>
+                            <input type="number" class="form-control" id="valor_pago" name="valor_pago" step="0.01" min="0" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="forma_pagamento" class="form-label">Forma de Pagamento *</label>
+                            <select class="form-control" id="forma_pagamento" name="forma_pagamento" required>
+                                <option value="">Selecione</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="cheque">Cheque</option>
+                                <option value="cartao_credito">Cartão de Crédito</option>
+                                <option value="cartao_debito">Cartão de Débito</option>
+                                <option value="transferencia">Transferência</option>
+                                <option value="pix">PIX</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_documento" class="form-label">Número do Documento</label>
+                            <input type="text" class="form-control" id="numero_documento" name="numero_documento" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação</label>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -91,29 +119,90 @@
 </div>
 
 <script>
+    const selectCliente = document.getElementById('cliente_id');
+    const selectConta = document.getElementById('conta_receber_id');
+    const resumoConta = document.getElementById('resumoConta');
+
+    function formatarMoeda(valor) {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(valor || 0);
+    }
+
+    async function carregarClientes() {
+        const response = await fetch('/clientes?json=1');
+        const clientes = await response.json();
+        selectCliente.innerHTML = '<option value="">Selecione o cliente</option>';
+        clientes.forEach(cliente => {
+            selectCliente.innerHTML += `<option value="${cliente.id}">${cliente.nome}</option>`;
+        });
+    }
+
+    async function carregarContas(clienteId) {
+        selectConta.innerHTML = '<option value="">Selecione a conta</option>';
+        resumoConta.classList.add('d-none');
+        resumoConta.innerHTML = '';
+
+        if (!clienteId) return;
+
+        const response = await fetch('/contas-receber?cliente_id=' + clienteId);
+        if (!response.ok) return;
+
+        const contas = await response.json();
+        contas.forEach(conta => {
+            const label = `OS #${conta.ordem_servico_id} - ${formatarMoeda(conta.valor)}`;
+            selectConta.innerHTML += `<option value="${conta.id}" data-conta='${JSON.stringify(conta)}'>${label}</option>`;
+        });
+    }
+
+    selectCliente.addEventListener('change', async (e) => {
+        await carregarContas(e.target.value);
+    });
+
+    selectConta.addEventListener('change', (e) => {
+        const option = e.target.options[e.target.selectedIndex];
+        const conta = option.dataset.conta ? JSON.parse(option.dataset.conta) : null;
+        if (!conta) {
+            resumoConta.classList.add('d-none');
+            resumoConta.innerHTML = '';
+            return;
+        }
+
+        resumoConta.classList.remove('d-none');
+        resumoConta.innerHTML = `
+            <strong>Cliente:</strong> ${selectCliente.options[selectCliente.selectedIndex]?.text || ''}<br>
+            <strong>OS:</strong> #${conta.ordem_servico_id}<br>
+            <strong>Valor Total:</strong> ${formatarMoeda(conta.valor)}
+        `;
+    });
+
     document.getElementById('formPagamento').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        
+
         try {
             const response = await fetch('/pagamentos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (response.ok) {
                 alert('Pagamento registrado com sucesso!');
                 location.reload();
             } else {
-                alert('Erro ao registrar pagamento');
+                const errorData = await response.json().catch(() => ({}));
+                alert(errorData.description || 'Erro ao registrar pagamento');
             }
         } catch (error) {
             console.error('Erro:', error);
             alert('Erro ao comunicar com servidor');
         }
     });
+
+    carregarClientes();
 
     function editarPagamento(id) {
         alert('Funcionalidade de edição em desenvolvimento');

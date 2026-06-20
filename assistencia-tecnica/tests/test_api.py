@@ -1,10 +1,13 @@
 import os
+from datetime import date
 
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from app import create_app
 from app.database.database import SessionLocal
 from app.models.aparelho import Aparelho
+from app.models.conta_receber import ContaReceber
+from app.models.ordem_servico import OrdemServico
 
 
 def test_index_menu():
@@ -53,12 +56,16 @@ def test_criar_e_listar_equipamentos():
     response = client.post("/equipamentos", json={
         "nome": "HD SSD 240GB",
         "quantidade": 10,
-        "valor_unitario": 150.00
+        "valor_unitario": 150.00,
+        "fornecedor": "TechParts LTDA",
+        "observacoes": "Peça original para notebook"
     })
     assert response.status_code == 201
     equipamento = response.get_json()
     assert equipamento["nome"] == "HD SSD 240GB"
     assert equipamento["quantidade"] == 10
+    assert equipamento["fornecedor"] == "TechParts LTDA"
+    assert equipamento["observacoes"] == "Peça original para notebook"
 
     # Listar equipamentos
     response = client.get("/equipamentos")
@@ -104,6 +111,72 @@ def test_criar_ordem_e_calcular_valor():
     assert calculo_response.status_code == 200
     calculada = calculo_response.get_json()
     assert calculada["valor_total"] == 150
+
+
+def test_criar_pagamento_com_cliente_e_conta():
+    app = create_app()
+    client = app.test_client()
+
+    cliente_response = client.post("/clientes", json={
+        "nome": "Maria Silva",
+        "cpf": "11122233344",
+    })
+    assert cliente_response.status_code == 201
+    cliente_id = cliente_response.get_json()["id"]
+
+    session = SessionLocal()
+    aparelho = Aparelho(
+        tipo="Notebook",
+        marca="Dell",
+        modelo="Inspiron",
+        numero_serie="DL123",
+        cliente_id=cliente_id,
+    )
+    session.add(aparelho)
+    session.commit()
+    session.refresh(aparelho)
+
+    ordem = OrdemServico(
+        cliente_id=cliente_id,
+        aparelho_id=aparelho.id,
+        valor_base=150,
+        descricao_problema="Problema na tela",
+        valor_total=150,
+    )
+    session.add(ordem)
+    session.commit()
+    session.refresh(ordem)
+
+    conta = ContaReceber(
+        valor=150,
+        vencimento=date.today(),
+        status="aberta",
+        ordem_servico_id=ordem.id,
+    )
+    session.add(conta)
+    session.commit()
+    session.refresh(conta)
+    session.close()
+
+    response = client.post(
+        "/pagamentos",
+        json={
+            "cliente_id": cliente_id,
+            "conta_receber_id": conta.id,
+            "valor_pago": 50,
+            "data_pagamento": "2026-06-19",
+            "forma_pagamento": "pix",
+            "numero_documento": "DOC-001",
+            "observacao": "Pagamento parcial",
+        },
+    )
+
+    assert response.status_code == 201
+    pagamento = response.get_json()
+    assert pagamento["cliente_id"] == cliente_id
+    assert pagamento["conta_receber_id"] == conta.id
+    assert pagamento["numero_documento"] == "DOC-001"
+    assert pagamento["observacao"] == "Pagamento parcial"
 
 
 def test_listar_ordens_com_bootstrap():

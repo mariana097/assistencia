@@ -63,6 +63,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formOrdem" method="POST" action="/ordens">
+                <input type="hidden" id="ordem_id_field" name="ordem_id" />
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -119,11 +120,13 @@
 </div>
 
 <script>
-    // Carregar dados dos dropdowns ao abrir o modal
     const modalOrdem = document.getElementById('modalOrdem');
+    const formOrdem = document.getElementById('formOrdem');
+    const ordemIdInput = document.getElementById('ordem_id_field');
+    const ordemTitle = modalOrdem.querySelector('.modal-title');
+
     modalOrdem?.addEventListener('show.bs.modal', async () => {
-        // Carregar clientes
-        const clientesResp = await fetch('/clientes');
+        const clientesResp = await fetch('/clientes?json=1');
         const clientes = await clientesResp.json();
         const selectCliente = document.getElementById('cliente_id');
         selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
@@ -131,7 +134,6 @@
             selectCliente.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
         });
 
-        // Carregar aparelhos
         const aparelhosResp = await fetch('/aparelhos');
         const aparelhos = await aparelhosResp.json();
         const selectAparelho = document.getElementById('aparelho_id');
@@ -140,7 +142,6 @@
             selectAparelho.innerHTML += `<option value="${a.id}">${a.tipo} - ${a.marca}</option>`;
         });
 
-        // Carregar técnicos
         const tecnicosResp = await fetch('/funcionarios');
         const tecnicos = tecnicosResp.ok ? await tecnicosResp.json() : [];
         const selectTecnico = document.getElementById('tecnico_id');
@@ -150,23 +151,27 @@
         });
     });
 
-    document.getElementById('formOrdem').addEventListener('submit', async (e) => {
+    formOrdem.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        
+        const ordemId = ordemIdInput.value;
+        const url = ordemId ? `/ordens/${ordemId}` : '/ordens';
+        const method = ordemId ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch('/ordens', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (response.ok) {
-                alert('Ordem de serviço criada com sucesso!');
+                alert(ordemId ? 'Ordem atualizada com sucesso!' : 'Ordem de serviço criada com sucesso!');
                 location.reload();
             } else {
-                alert('Erro ao criar ordem de serviço');
+                const errorData = await response.json().catch(() => ({}));
+                alert(errorData.description || 'Erro ao criar ordem de serviço');
             }
         } catch (error) {
             console.error('Erro:', error);
@@ -176,17 +181,49 @@
 
     function calcularOrdem(id) {
         alert('Redirecionando para cálculo...');
-        // Em produção, abriria uma página de detalhes com o cálculo
     }
 
     function editarOrdem(id) {
-        alert('Funcionalidade de edição em desenvolvimento');
+        fetch(`/ordens/${id}`)
+            .then(res => res.json())
+            .then(ordem => {
+                document.getElementById('cliente_id').value = ordem.cliente_id || '';
+                document.getElementById('aparelho_id').value = ordem.aparelho_id || '';
+                document.getElementById('tecnico_id').value = ordem.tecnico_id || '';
+                document.getElementById('descricao_problema').value = ordem.descricao_problema || '';
+                document.getElementById('valor_base').value = ordem.valor_base || '';
+                document.getElementById('tipo_calculo').value = 'padrao';
+                ordemIdInput.value = ordem.id;
+                ordemTitle.textContent = 'Editar Ordem de Serviço';
+                new bootstrap.Modal(modalOrdem).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao carregar ordem');
+            });
     }
 
     function apagarOrdem(id) {
         if (confirm('Tem certeza que deseja apagar esta ordem de serviço?')) {
-            alert('Funcionalidade de exclusão em desenvolvimento');
+            fetch(`/ordens/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao apagar ordem de serviço');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao apagar ordem de serviço');
+                });
         }
     }
+
+    modalOrdem.addEventListener('hidden.bs.modal', () => {
+        formOrdem.reset();
+        ordemIdInput.value = '';
+        ordemTitle.textContent = 'Nova Ordem de Serviço';
+    });
 </script>
 {% endblock %}

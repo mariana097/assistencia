@@ -56,6 +56,8 @@ def create_app():
             "nome": e.nome,
             "quantidade": e.quantidade,
             "valor_unitario": e.valor_unitario,
+            "fornecedor": getattr(e, "fornecedor", None),
+            "observacoes": getattr(e, "observacoes", None),
         }
 
     def serialize_aparelho(a):
@@ -79,9 +81,12 @@ def create_app():
     def serialize_pagamento(p):
         return {
             "id": p.id,
+            "cliente_id": p.cliente_id,
             "valor_pago": p.valor_pago,
             "data_pagamento": p.data_pagamento.isoformat() if p.data_pagamento else None,
             "forma_pagamento": p.forma_pagamento,
+            "numero_documento": p.numero_documento,
+            "observacao": p.observacao,
             "conta_receber_id": p.conta_receber_id,
         }
 
@@ -142,7 +147,36 @@ def create_app():
             return jsonify(serialize_cliente(cliente)), 201
 
         clientes = controller.listar_clientes()
+        if request.args.get("json") is not None:
+            return jsonify([serialize_cliente(cliente) for cliente in clientes])
         return render_template("clientes_list.html", clientes=clientes)
+
+    @app.route("/clientes/<int:cliente_id>", methods=["GET", "PUT", "DELETE"])
+    def cliente_detail(cliente_id):
+        controller = get_cliente_controller()
+        db = get_db()
+        from app.models.cliente import Cliente
+
+        cliente = db.query(Cliente).get(cliente_id)
+        if cliente is None:
+            abort(404, description="Cliente não encontrado.")
+
+        if request.method == "GET":
+            return jsonify(serialize_cliente(cliente))
+
+        if request.method == "PUT":
+            data = request.get_json() or {}
+            cliente.nome = data.get("nome", cliente.nome)
+            cliente.cpf = data.get("cpf", cliente.cpf)
+            cliente.telefone = data.get("telefone", cliente.telefone)
+            cliente.email = data.get("email", cliente.email)
+            cliente.endereco = data.get("endereco", cliente.endereco)
+            db.commit()
+            db.refresh(cliente)
+            return jsonify(serialize_cliente(cliente))
+
+        controller.service.repository.delete(cliente)
+        return jsonify({"message": "Cliente removido com sucesso."})
 
     @app.route("/ordens", methods=["GET", "POST"])
     def ordens():
@@ -165,6 +199,35 @@ def create_app():
 
         ordens = controller.listar_ordens()
         return render_template("ordens_list.html", ordens=ordens)
+
+    @app.route("/ordens/<int:ordem_id>", methods=["GET", "PUT", "DELETE"])
+    def ordem_detail(ordem_id):
+        db = get_db()
+        from app.models.ordem_servico import OrdemServico
+
+        ordem = db.query(OrdemServico).get(ordem_id)
+        if ordem is None:
+            abort(404, description="Ordem de serviço não encontrada.")
+
+        if request.method == "GET":
+            return jsonify(serialize_ordem(ordem))
+
+        if request.method == "PUT":
+            data = request.get_json() or {}
+            ordem.cliente_id = data.get("cliente_id", ordem.cliente_id)
+            ordem.aparelho_id = data.get("aparelho_id", ordem.aparelho_id)
+            ordem.tecnico_id = data.get("tecnico_id", ordem.tecnico_id)
+            ordem.descricao_problema = data.get("descricao_problema", ordem.descricao_problema)
+            ordem.status = data.get("status", ordem.status)
+            ordem.valor_base = data.get("valor_base", ordem.valor_base)
+            ordem.valor_total = data.get("valor_total", ordem.valor_total)
+            db.commit()
+            db.refresh(ordem)
+            return jsonify(serialize_ordem(ordem))
+
+        db.delete(ordem)
+        db.commit()
+        return jsonify({"message": "Ordem removida com sucesso."})
 
     @app.route("/ordens/<int:ordem_id>/calcular", methods=["POST"])
     def calcular_ordem(ordem_id):
@@ -197,6 +260,32 @@ def create_app():
         tecnicos = db.query(Tecnico).all()
         return render_template("tecnicos_list.html", tecnicos=tecnicos)
 
+    @app.route("/tecnicos/<int:tecnico_id>", methods=["GET", "PUT", "DELETE"])
+    def tecnico_detail(tecnico_id):
+        db = get_db()
+        from app.models.funcionario import Tecnico
+
+        tecnico = db.query(Tecnico).get(tecnico_id)
+        if tecnico is None:
+            abort(404, description="Técnico não encontrado.")
+
+        if request.method == "GET":
+            return jsonify(serialize_funcionario(tecnico))
+
+        if request.method == "PUT":
+            data = request.get_json() or {}
+            tecnico.nome = data.get("nome", tecnico.nome)
+            tecnico.cpf = data.get("cpf", tecnico.cpf)
+            tecnico.salario = data.get("salario", tecnico.salario)
+            tecnico.especialidade = data.get("especialidade", tecnico.especialidade)
+            db.commit()
+            db.refresh(tecnico)
+            return jsonify(serialize_funcionario(tecnico))
+
+        db.delete(tecnico)
+        db.commit()
+        return jsonify({"message": "Técnico removido com sucesso."})
+
     @app.route("/equipamentos", methods=["GET", "POST"])
     def equipamentos():
         db = get_db()
@@ -207,17 +296,54 @@ def create_app():
             nome = data.get("nome")
             quantidade = data.get("quantidade", 0)
             valor = data.get("valor_unitario", 0.0)
+            fornecedor = data.get("fornecedor")
+            observacoes = data.get("observacoes")
             if not nome:
                 abort(400, description="O campo 'nome' é obrigatório.")
 
-            equipamento = Equipamento(nome=nome, quantidade=quantidade, valor_unitario=valor)
+            equipamento = Equipamento(
+                nome=nome,
+                quantidade=quantidade,
+                valor_unitario=valor,
+                fornecedor=fornecedor,
+                observacoes=observacoes,
+            )
             db.add(equipamento)
             db.commit()
             db.refresh(equipamento)
             return jsonify(serialize_equipamento(equipamento)), 201
 
         equipamentos = db.query(Equipamento).all()
+        if request.args.get("json") is not None:
+            return jsonify([serialize_equipamento(e) for e in equipamentos])
         return render_template("equipamentos_list.html", equipamentos=equipamentos)
+
+    @app.route("/equipamentos/<int:equipamento_id>", methods=["GET", "PUT", "DELETE"])
+    def equipamento_detail(equipamento_id):
+        db = get_db()
+        from app.models.equipamento import Equipamento
+
+        equipamento = db.query(Equipamento).get(equipamento_id)
+        if equipamento is None:
+            abort(404, description="Equipamento não encontrado.")
+
+        if request.method == "GET":
+            return jsonify(serialize_equipamento(equipamento))
+
+        if request.method == "PUT":
+            data = request.get_json() or {}
+            equipamento.nome = data.get("nome", equipamento.nome)
+            equipamento.quantidade = data.get("quantidade", equipamento.quantidade)
+            equipamento.valor_unitario = data.get("valor_unitario", equipamento.valor_unitario)
+            equipamento.fornecedor = data.get("fornecedor", equipamento.fornecedor)
+            equipamento.observacoes = data.get("observacoes", equipamento.observacoes)
+            db.commit()
+            db.refresh(equipamento)
+            return jsonify(serialize_equipamento(equipamento))
+
+        db.delete(equipamento)
+        db.commit()
+        return jsonify({"message": "Equipamento removido com sucesso."})
 
     @app.route("/estoque", methods=["GET", "POST"])
     def estoque():
@@ -238,6 +364,31 @@ def create_app():
         estoques = db.query(Estoque).all()
         return render_template("estoque_list.html", estoques=estoques)
 
+    @app.route("/estoque/<int:estoque_id>", methods=["GET", "PUT", "DELETE"])
+    def estoque_detail(estoque_id):
+        db = get_db()
+        from app.models.estoque import Estoque
+
+        estoque = db.query(Estoque).get(estoque_id)
+        if estoque is None:
+            abort(404, description="Item de estoque não encontrado.")
+
+        if request.method == "GET":
+            return jsonify(serialize_estoque(estoque))
+
+        if request.method == "PUT":
+            data = request.get_json() or {}
+            estoque.equipamento_id = data.get("equipamento_id", estoque.equipamento_id)
+            estoque.quantidade_disponivel = data.get("quantidade_disponivel", estoque.quantidade_disponivel)
+            estoque.quantidade_minima = data.get("quantidade_minima", estoque.quantidade_minima)
+            db.commit()
+            db.refresh(estoque)
+            return jsonify(serialize_estoque(estoque))
+
+        db.delete(estoque)
+        db.commit()
+        return jsonify({"message": "Item removido com sucesso."})
+
     @app.route("/pagamentos", methods=["GET", "POST"])
     def pagamentos():
         db = get_db()
@@ -245,17 +396,55 @@ def create_app():
 
         if request.method == "POST":
             data = request.get_json() or {}
+            cliente_id = data.get("cliente_id")
             conta_receber_id = data.get("conta_receber_id")
             valor_pago = data.get("valor_pago")
             forma = data.get("forma_pagamento")
-            if conta_receber_id is None or valor_pago is None:
-                abort(400, description="Os campos 'conta_receber_id' e 'valor_pago' são obrigatórios.")
+            data_pagamento = data.get("data_pagamento")
+            numero_documento = data.get("numero_documento")
+            observacao = data.get("observacao")
 
-            pagamento = get_pagamento_service().registrar_pagamento(conta_receber_id, valor_pago, forma)
+            if cliente_id is None or conta_receber_id is None or valor_pago is None:
+                abort(400, description="Os campos 'cliente_id', 'conta_receber_id' e 'valor_pago' são obrigatórios.")
+
+            pagamento = get_pagamento_service().registrar_pagamento(
+                cliente_id=cliente_id,
+                conta_receber_id=conta_receber_id,
+                valor_pago=valor_pago,
+                forma_pagamento=forma,
+                data_pagamento=data_pagamento,
+                numero_documento=numero_documento,
+                observacao=observacao,
+            )
             return jsonify(serialize_pagamento(pagamento)), 201
 
         pagamentos = db.query(Pagamento).all()
         return render_template("pagamentos_list.html", pagamentos=pagamentos)
+
+    @app.route("/contas-receber")
+    def contas_receber():
+        from app.models.conta_receber import ContaReceber
+        from app.models.ordem_servico import OrdemServico
+
+        db = get_db()
+        cliente_id = request.args.get("cliente_id")
+
+        query = db.query(ContaReceber).join(OrdemServico, ContaReceber.ordem_servico_id == OrdemServico.id)
+        if cliente_id:
+            query = query.filter(OrdemServico.cliente_id == int(cliente_id))
+
+        contas = query.all()
+        return jsonify([
+            {
+                "id": conta.id,
+                "valor": conta.valor,
+                "vencimento": conta.vencimento.isoformat() if conta.vencimento else None,
+                "status": conta.status,
+                "ordem_servico_id": conta.ordem_servico_id,
+                "cliente_id": conta.ordem_servico.cliente_id if conta.ordem_servico else None,
+            }
+            for conta in contas
+        ])
 
     @app.route("/aparelhos", methods=["GET", "POST"])
     def aparelhos():
