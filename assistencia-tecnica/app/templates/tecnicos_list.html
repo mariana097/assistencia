@@ -60,6 +60,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formTecnico" method="POST" action="/tecnicos">
+                <input type="hidden" id="tecnico_id_field" name="tecnico_id" />
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="nome" class="form-label">Nome *</label>
@@ -88,23 +89,32 @@
 </div>
 
 <script>
-    document.getElementById('formTecnico').addEventListener('submit', async (e) => {
+    const formTecnico = document.getElementById('formTecnico');
+    const modalTecnico = document.getElementById('modalTecnico');
+    const tecnicoIdInput = document.getElementById('tecnico_id_field');
+    const tecnicoTitle = modalTecnico.querySelector('.modal-title');
+
+    formTecnico.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        
+        const tecnicoId = tecnicoIdInput.value;
+        const url = tecnicoId ? `/tecnicos/${tecnicoId}` : '/tecnicos';
+        const method = tecnicoId ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch('/tecnicos', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (response.ok) {
-                alert('Técnico salvo com sucesso!');
+                alert(tecnicoId ? 'Técnico atualizado com sucesso!' : 'Técnico salvo com sucesso!');
                 location.reload();
             } else {
-                alert('Erro ao salvar técnico');
+                const errorData = await response.json().catch(() => ({}));
+                alert(errorData.description || 'Erro ao salvar técnico');
             }
         } catch (error) {
             console.error('Erro:', error);
@@ -113,13 +123,44 @@
     });
 
     function editarTecnico(id) {
-        alert('Funcionalidade de edição em desenvolvimento');
+        fetch(`/tecnicos/${id}`)
+            .then(res => res.json())
+            .then(tecnico => {
+                document.getElementById('nome').value = tecnico.nome || '';
+                document.getElementById('cpf').value = tecnico.cpf || '';
+                document.getElementById('salario').value = tecnico.salario || '';
+                document.getElementById('especialidade').value = tecnico.especialidade || '';
+                tecnicoIdInput.value = tecnico.id;
+                tecnicoTitle.textContent = 'Editar Técnico';
+                new bootstrap.Modal(modalTecnico).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao carregar técnico');
+            });
     }
 
     function apagarTecnico(id) {
         if (confirm('Tem certeza que deseja apagar este técnico?')) {
-            alert('Funcionalidade de exclusão em desenvolvimento');
+            fetch(`/tecnicos/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao apagar técnico');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao apagar técnico');
+                });
         }
     }
+
+    modalTecnico.addEventListener('hidden.bs.modal', () => {
+        formTecnico.reset();
+        tecnicoIdInput.value = '';
+        tecnicoTitle.textContent = 'Novo Técnico';
+    });
 </script>
 {% endblock %}

@@ -56,12 +56,16 @@ def test_criar_e_listar_equipamentos():
     response = client.post("/equipamentos", json={
         "nome": "HD SSD 240GB",
         "quantidade": 10,
-        "valor_unitario": 150.00
+        "valor_unitario": 150.00,
+        "fornecedor": "TechParts LTDA",
+        "observacoes": "Peça original para notebook"
     })
     assert response.status_code == 201
     equipamento = response.get_json()
     assert equipamento["nome"] == "HD SSD 240GB"
     assert equipamento["quantidade"] == 10
+    assert equipamento["fornecedor"] == "TechParts LTDA"
+    assert equipamento["observacoes"] == "Peça original para notebook"
 
     # Listar equipamentos
     response = client.get("/equipamentos")

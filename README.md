@@ -12,8 +12,8 @@ Sistema de Gestão de Assistência Técnica
 
 # 1. API
 
-URL pública: https://psychic-succotash-jwpp47xrgj525xx7-5000.app.github.dev
-Acesse a raiz para testar: https://psychic-succotash-jwpp47xrgj525xx7-5000.app.github.dev/
+URL pública: https://super-duper-couscous-4j5r6gw97g49h5rqr-5000.app.github.dev/
+Acesse a raiz para testar: https://super-duper-couscous-4j5r6gw97g49h5rqr-5000.app.github.dev/
 Comando usado localmente: python3 assistencia-tecnica/run.py
 
 ---

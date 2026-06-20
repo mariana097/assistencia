@@ -66,12 +66,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formEstoque" method="POST" action="/estoque">
+                <input type="hidden" id="estoque_id_field" name="estoque_id" />
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="equipamento_id" class="form-label">Equipamento *</label>
+                        <label for="equipamento_id" class="form-label">Equipamento * (nome do item)</label>
                         <select class="form-control" id="equipamento_id" name="equipamento_id" required>
-                            <option value="">Selecione um equipamento</option>
+                            <option value="">Selecione o item para o estoque</option>
                         </select>
+                        <small class="form-text text-muted">Exemplos: Tela Samsung A14, Bateria iPhone 11, HD SSD 480GB, Fonte ATX 500W</small>
                     </div>
                     <div class="mb-3">
                         <label for="quantidade_disponivel" class="form-label">Quantidade Disponível *</label>
@@ -92,35 +94,42 @@
 </div>
 
 <script>
-    // Carregar equipamentos ao abrir o modal
     const modalEstoque = document.getElementById('modalEstoque');
+    const formEstoque = document.getElementById('formEstoque');
+    const estoqueIdInput = document.getElementById('estoque_id_field');
+    const estoqueTitle = modalEstoque.querySelector('.modal-title');
+
     modalEstoque?.addEventListener('show.bs.modal', async () => {
-        const equipamentosResp = await fetch('/equipamentos');
+        const equipamentosResp = await fetch('/equipamentos?json=1');
         const equipamentos = await equipamentosResp.json();
         const selectEquipamento = document.getElementById('equipamento_id');
-        selectEquipamento.innerHTML = '<option value="">Selecione um equipamento</option>';
+        selectEquipamento.innerHTML = '<option value="">Selecione o item para o estoque</option>';
         equipamentos.forEach(e => {
             selectEquipamento.innerHTML += `<option value="${e.id}">${e.nome}</option>`;
         });
     });
 
-    document.getElementById('formEstoque').addEventListener('submit', async (e) => {
+    formEstoque.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        
+        const estoqueId = estoqueIdInput.value;
+        const url = estoqueId ? `/estoque/${estoqueId}` : '/estoque';
+        const method = estoqueId ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch('/estoque', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (response.ok) {
-                alert('Item de estoque salvo com sucesso!');
+                alert(estoqueId ? 'Item de estoque atualizado com sucesso!' : 'Item de estoque salvo com sucesso!');
                 location.reload();
             } else {
-                alert('Erro ao salvar item de estoque');
+                const errorData = await response.json().catch(() => ({}));
+                alert(errorData.description || 'Erro ao salvar item de estoque');
             }
         } catch (error) {
             console.error('Erro:', error);
@@ -129,13 +138,43 @@
     });
 
     function editarEstoque(id) {
-        alert('Funcionalidade de edição em desenvolvimento');
+        fetch(`/estoque/${id}`)
+            .then(res => res.json())
+            .then(estoque => {
+                document.getElementById('equipamento_id').value = estoque.equipamento_id || '';
+                document.getElementById('quantidade_disponivel').value = estoque.quantidade_disponivel || 0;
+                document.getElementById('quantidade_minima').value = estoque.quantidade_minima || 0;
+                estoqueIdInput.value = estoque.id;
+                estoqueTitle.textContent = 'Editar Item de Estoque';
+                new bootstrap.Modal(modalEstoque).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao carregar item de estoque');
+            });
     }
 
     function apagarEstoque(id) {
         if (confirm('Tem certeza que deseja apagar este item de estoque?')) {
-            alert('Funcionalidade de exclusão em desenvolvimento');
+            fetch(`/estoque/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao apagar item de estoque');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao apagar item de estoque');
+                });
         }
     }
+
+    modalEstoque.addEventListener('hidden.bs.modal', () => {
+        formEstoque.reset();
+        estoqueIdInput.value = '';
+        estoqueTitle.textContent = 'Novo Item de Estoque';
+    });
 </script>
 {% endblock %}
