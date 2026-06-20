@@ -20,4 +20,5 @@ def init_db():
     from app.models.conta_receber import ContaReceber
     from app.models.pagamento import Pagamento
 
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)

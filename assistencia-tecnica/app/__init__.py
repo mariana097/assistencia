@@ -79,9 +79,12 @@ def create_app():
     def serialize_pagamento(p):
         return {
             "id": p.id,
+            "cliente_id": p.cliente_id,
             "valor_pago": p.valor_pago,
             "data_pagamento": p.data_pagamento.isoformat() if p.data_pagamento else None,
             "forma_pagamento": p.forma_pagamento,
+            "numero_documento": p.numero_documento,
+            "observacao": p.observacao,
             "conta_receber_id": p.conta_receber_id,
         }
 
@@ -142,6 +145,8 @@ def create_app():
             return jsonify(serialize_cliente(cliente)), 201
 
         clientes = controller.listar_clientes()
+        if request.args.get("json") is not None:
+            return jsonify([serialize_cliente(cliente) for cliente in clientes])
         return render_template("clientes_list.html", clientes=clientes)
 
     @app.route("/ordens", methods=["GET", "POST"])
@@ -245,17 +250,55 @@ def create_app():
 
         if request.method == "POST":
             data = request.get_json() or {}
+            cliente_id = data.get("cliente_id")
             conta_receber_id = data.get("conta_receber_id")
             valor_pago = data.get("valor_pago")
             forma = data.get("forma_pagamento")
-            if conta_receber_id is None or valor_pago is None:
-                abort(400, description="Os campos 'conta_receber_id' e 'valor_pago' são obrigatórios.")
+            data_pagamento = data.get("data_pagamento")
+            numero_documento = data.get("numero_documento")
+            observacao = data.get("observacao")
 
-            pagamento = get_pagamento_service().registrar_pagamento(conta_receber_id, valor_pago, forma)
+            if cliente_id is None or conta_receber_id is None or valor_pago is None:
+                abort(400, description="Os campos 'cliente_id', 'conta_receber_id' e 'valor_pago' são obrigatórios.")
+
+            pagamento = get_pagamento_service().registrar_pagamento(
+                cliente_id=cliente_id,
+                conta_receber_id=conta_receber_id,
+                valor_pago=valor_pago,
+                forma_pagamento=forma,
+                data_pagamento=data_pagamento,
+                numero_documento=numero_documento,
+                observacao=observacao,
+            )
             return jsonify(serialize_pagamento(pagamento)), 201
 
         pagamentos = db.query(Pagamento).all()
         return render_template("pagamentos_list.html", pagamentos=pagamentos)
+
+    @app.route("/contas-receber")
+    def contas_receber():
+        from app.models.conta_receber import ContaReceber
+        from app.models.ordem_servico import OrdemServico
+
+        db = get_db()
+        cliente_id = request.args.get("cliente_id")
+
+        query = db.query(ContaReceber).join(OrdemServico, ContaReceber.ordem_servico_id == OrdemServico.id)
+        if cliente_id:
+            query = query.filter(OrdemServico.cliente_id == int(cliente_id))
+
+        contas = query.all()
+        return jsonify([
+            {
+                "id": conta.id,
+                "valor": conta.valor,
+                "vencimento": conta.vencimento.isoformat() if conta.vencimento else None,
+                "status": conta.status,
+                "ordem_servico_id": conta.ordem_servico_id,
+                "cliente_id": conta.ordem_servico.cliente_id if conta.ordem_servico else None,
+            }
+            for conta in contas
+        ])
 
     @app.route("/aparelhos", methods=["GET", "POST"])
     def aparelhos():
