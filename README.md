@@ -12,29 +12,9 @@ Sistema de Gestão de Assistência Técnica
 
 # 1. API Assistência Técnica
 
-## URL Pública
+Link: https://assistencia-qp69.onrender.com/
 
-A API está disponível em:
 
-```text
-https://super-duper-couscous-4j5r6gw97g49h5rqr-5000.app.github.dev/
-```
-
-## Teste da Aplicação
-
-Para acessar a página inicial da aplicação, utilize:
-
-```text
-https://super-duper-couscous-4j5r6gw97g49h5rqr-5000.app.github.dev/
-```
-
-## Execução Local
-
-Para executar o projeto localmente:
-
-```bash
-python3 assistencia-tecnica/run.py
-```
 
 ---
 
